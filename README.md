@@ -1,6 +1,6 @@
 # No Tickle
 
-禁用微信拍一拍, 仅在 8.0.11 Play 版本测试过。
+禁用微信拍一拍, 仅在 8.0.18 Play 版本测试过。
 
 ## Installation
 
