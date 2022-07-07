@@ -8,7 +8,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 class Hook : IXposedHookLoadPackage {
 
     companion object {
-        const val TAG = "io.github.k265.notickle"
+        const val TAG = Helper.TAG
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
@@ -23,10 +23,29 @@ class Hook : IXposedHookLoadPackage {
 
         XposedBridge.log("$TAG: hooking $packageName")
 
+        when (val versionName = Helper.getVersionName(packageName)) {
+            "8.0.18" -> {
+                hookSendPat(lpparam, "N")
+            }
+            "8.0.19" -> {
+                hookSendPat(lpparam, "Q")
+            }
+            "8.0.24" -> {
+                hookSendPat(lpparam, "aa")
+            }
+            else -> {
+                hookIsPatEnable(lpparam)
+                XposedBridge.log("$TAG: unknown $packageName versionName: $versionName, applying isPatEnable hook")
+            }
+        }
+
+    }
+
+    private fun hookSendPat(lpparam: XC_LoadPackage.LoadPackageParam, methodName: String) {
         Helper.findAndHookMethod(
             "com.tencent.mm.plugin.patmsg.a",
             lpparam.classLoader,
-            "N",
+            methodName,
             Int::class.javaPrimitiveType,
             "java.lang.String",
             "java.lang.String",
@@ -37,26 +56,32 @@ class Hook : IXposedHookLoadPackage {
                     }
 
                     param.result = null
-                    XposedBridge.log("$TAG: hooking $packageName: com.tencent.mm.plugin.patmsg.a.N")
+                    XposedBridge.log("$TAG: hooking com.tencent.mm.plugin.patmsg.a.$methodName")
                 }
             }
         )
+    }
 
-        // Helper.findAndHookMethod(
-        //     "com.tencent.mm.plugin.patmsg.PluginPatMsg",
-        //     lpparam.classLoader,
-        //     "isPatEnable",
-        //     object : XC_MethodHook() {
-        //         override fun beforeHookedMethod(param: MethodHookParam?) {
-        //             if (param == null) {
-        //                 return
-        //             }
-        //
-        //             param.result = false
-        //             XposedBridge.log("$TAG: hooking $packageName: com.tencent.mm.plugin.patmsg.PluginPatMsg.isPatEnable")
-        //         }
-        //     }
-        // )
+    /**
+     * hook isPatEnable to return false
+     * this will disable tickle reception too
+     */
+    private fun hookIsPatEnable(lpparam: XC_LoadPackage.LoadPackageParam) {
+        Helper.findAndHookMethod(
+            "com.tencent.mm.plugin.patmsg.PluginPatMsg",
+            lpparam.classLoader,
+            "isPatEnable",
+            object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam?) {
+                    if (param == null) {
+                        return
+                    }
+
+                    param.result = false
+                    XposedBridge.log("$TAG: hooking com.tencent.mm.plugin.patmsg.PluginPatMsg.isPatEnable")
+                }
+            }
+        )
     }
 
 }
