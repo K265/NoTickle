@@ -1,7 +1,7 @@
 package io.github.k265.notickle.xposed
 
 import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
@@ -21,6 +21,11 @@ class Hook : IXposedHookLoadPackage {
             return
         }
 
+        val processName = lpparam.processName
+        if (processName != "com.tencent.mm") {
+            return
+        }
+
         XposedBridge.log("$TAG: hooking $packageName")
 
         when (val versionName = Helper.getVersionName(packageName)) {
@@ -28,6 +33,9 @@ class Hook : IXposedHookLoadPackage {
                 hookSendPat(lpparam, "N")
             }
             "8.0.19" -> {
+                hookSendPat(lpparam, "Q")
+            }
+            "8.0.21" -> {
                 hookSendPat(lpparam, "Q")
             }
             "8.0.24" -> {
@@ -49,14 +57,10 @@ class Hook : IXposedHookLoadPackage {
             Int::class.javaPrimitiveType,
             "java.lang.String",
             "java.lang.String",
-            object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam?) {
-                    if (param == null) {
-                        return
-                    }
-
-                    param.result = null
-                    XposedBridge.log("$TAG: hooking com.tencent.mm.plugin.patmsg.a.$methodName")
+            object : XC_MethodReplacement() {
+                override fun replaceHookedMethod(param: MethodHookParam?): Any? {
+                    XposedBridge.log("$TAG: hooking com.tencent.mm.plugin.patmsg.ui.a.$methodName")
+                    return null
                 }
             }
         )
@@ -71,14 +75,10 @@ class Hook : IXposedHookLoadPackage {
             "com.tencent.mm.plugin.patmsg.PluginPatMsg",
             lpparam.classLoader,
             "isPatEnable",
-            object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam?) {
-                    if (param == null) {
-                        return
-                    }
-
-                    param.result = false
+            object : XC_MethodReplacement() {
+                override fun replaceHookedMethod(param: MethodHookParam?): Any? {
                     XposedBridge.log("$TAG: hooking com.tencent.mm.plugin.patmsg.PluginPatMsg.isPatEnable")
+                    return false
                 }
             }
         )

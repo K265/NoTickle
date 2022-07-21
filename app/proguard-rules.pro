@@ -20,4 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.github.k265.** { *; }
+-keep class io.github.k265.notickle.xposed.** { *; }
